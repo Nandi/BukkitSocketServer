@@ -79,7 +79,7 @@ public class ClientHandler implements Runnable {
 	        
 	        NodeList nList = docInput.getElementsByTagName("command");
 	        
-	        Element output = null;
+	        Node output = null;
 	        Element rootElement = docOutput.createElement("responseList");
 	        
 	        for(int i = 0; i < nList.getLength(); i++){
@@ -115,8 +115,8 @@ public class ClientHandler implements Runnable {
 		}
 	}
 	
-    private Element processInput(String input, List<String> args) throws Exception{
-        Element output = null;
+    private Node processInput(String input, List<String> args) throws Exception{
+        Node output = null;
        
         if(input.equalsIgnoreCase("playerlist"))
         	output = c.playerList(args);

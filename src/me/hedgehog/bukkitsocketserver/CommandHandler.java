@@ -20,6 +20,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 public class CommandHandler {
 	
@@ -58,7 +59,7 @@ public class CommandHandler {
 	}
 	
 	// Gets a list of all players, takes world name as arguments
-	public Element playerList(List<String> args){
+	public Node playerList(List<String> args){
 		doc  = docBuilder.newDocument();
 		Element rootElement = doc.createElement("worlds");
 		doc.appendChild(rootElement);
@@ -96,11 +97,11 @@ public class CommandHandler {
 			}
 		}
 		
-		return rootElement;
+		return rootElement.cloneNode(true);
 	}
 	
 	// Gets players inventory takes player name as argument
-	public Element playerInventory(List<String> args){
+	public Node playerInventory(List<String> args){
 		doc  = docBuilder.newDocument();
 		Element rootElement = doc.createElement("players");
 		doc.appendChild(rootElement);
@@ -147,22 +148,22 @@ public class CommandHandler {
 			}
 		}
 
-		return rootElement;
+		return rootElement.cloneNode(true);
 	}
 	
 	// Gets a standard responce to a unrecognized command
-	public Element errorString(String err){
+	public Node errorString(String err){
 		doc  = docBuilder.newDocument();
 		
 		Element rootElement = doc.createElement("error");
 		rootElement.appendChild(doc.createTextNode(err));
 		doc.appendChild(rootElement);
 		
-		return rootElement;
+		return rootElement.cloneNode(true);
 	}
 	
 	// Gets the console output since last start
-	public Element getConsole(){
+	public Node getConsole(){
 		List<String> lines = readConsole();
 		doc  = docBuilder.newDocument();
 		
@@ -179,7 +180,7 @@ public class CommandHandler {
 			rootElement.appendChild(line);
 		}
 		
-		return rootElement;
+		return rootElement.cloneNode(true);
 	}
 
 	
