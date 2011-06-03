@@ -1,0 +1,8 @@
+name: TCPComs
+main: me.hedgehog.tcpcoms.TCPComs
+version: 0.1.0
+commands:
+   tcp:
+      description: This is a demo command.
+      usage: |
+           /<command>
