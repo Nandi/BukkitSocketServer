@@ -105,7 +105,10 @@ public class ClientHandler implements Runnable {
 	        }
 	       
 	        //Send this!
-	        getString(docOutput);
+	        String[] outStr = getString(docOutput);
+	        
+	        for(String s : outStr)
+	        	System.out.println(s);
 	        
     	}catch (Exception e) {
     		e.printStackTrace();
