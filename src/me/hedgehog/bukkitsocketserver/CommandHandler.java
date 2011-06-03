@@ -4,18 +4,12 @@ import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
-import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.util.LinkedList;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 
 import net.minecraft.server.MinecraftServer;
 
@@ -64,8 +58,7 @@ public class CommandHandler {
 	}
 	
 	// Gets a list of all players, takes world name as arguments
-	public String[] playerList(List<String> args){
-		String[] output = null;
+	public Element playerList(List<String> args){
 		doc  = docBuilder.newDocument();
 		Element rootElement = doc.createElement("worlds");
 		doc.appendChild(rootElement);
@@ -103,18 +96,11 @@ public class CommandHandler {
 			}
 		}
 		
-		try{
-			output = getString();
-		}catch (Exception e) {
-			e.printStackTrace();
-		}
-		
-		return output;
+		return rootElement;
 	}
 	
 	// Gets players inventory takes player name as argument
-	public String[] playerInventory(List<String> args){
-		String[] output = null;
+	public Element playerInventory(List<String> args){
 		doc  = docBuilder.newDocument();
 		Element rootElement = doc.createElement("players");
 		doc.appendChild(rootElement);
@@ -160,38 +146,24 @@ public class CommandHandler {
 				inventory.appendChild(item);
 			}
 		}
-		
-		try{
-			output = getString();
-		}catch (Exception e) {
-			e.printStackTrace();
-		}
-		
-		return output;
+
+		return rootElement;
 	}
 	
 	// Gets a standard responce to a unrecognized command
-	public String[] errorString(String err){
-		String[] output = null;
+	public Element errorString(String err){
 		doc  = docBuilder.newDocument();
 		
 		Element rootElement = doc.createElement("error");
 		rootElement.appendChild(doc.createTextNode(err));
 		doc.appendChild(rootElement);
 		
-		try{
-			output = getString();
-		}catch (Exception e) {
-			e.printStackTrace();
-		}
-		
-		return output;
+		return rootElement;
 	}
 	
 	// Gets the console output since last start
-	public String[] getConsole(){
+	public Element getConsole(){
 		List<String> lines = readConsole();
-		String[] output = null;
 		doc  = docBuilder.newDocument();
 		
 		Element rootElement = doc.createElement("console");
@@ -207,31 +179,9 @@ public class CommandHandler {
 			rootElement.appendChild(line);
 		}
 		
-		try{
-			output = getString();
-		}catch (Exception e) {
-			e.printStackTrace();
-		}
-		
-		return output;
+		return rootElement;
 	}
 
-	// Converts a XML Document to a Sting array
-	private String[] getString() throws Exception{
-		TransformerFactory transformerFactory = TransformerFactory.newInstance();
-		Transformer transformer = transformerFactory.newTransformer();
-		
-		StringWriter sw = new StringWriter();
-        StreamResult result = new StreamResult(sw);
-        DOMSource source = new DOMSource(doc);
-        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-        transformer.transform(source, result);
-        
-        String temp = sw.toString();
-        String[] output = temp.split("\\r?\\n");
-        
-    	return output;
-	}
 	
 	// Read the server log
 	private List<String> readConsole(){

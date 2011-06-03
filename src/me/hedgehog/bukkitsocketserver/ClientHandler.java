@@ -74,16 +74,24 @@ public class ClientHandler implements Runnable {
 	        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 	        InputSource is = new InputSource();
 	        is.setCharacterStream(new StringReader(input));
-	        Document doc = dBuilder.parse(is);
+	        Document docInput = dBuilder.parse(is);
+	        Document docOutput  = dBuilder.newDocument();
 	        
-	        NodeList nList = doc.getElementsByTagName("command");
+	        NodeList nList = docInput.getElementsByTagName("command");
 	        
-	        String[] output = {};
+	        Element output = null;
+	        Element rootElement = docOutput.createElement("responseList");
+	        
 	        for(int i = 0; i < nList.getLength(); i++){
+	        	
 	        	Node nNode = nList.item(i);	    
 	            if (nNode.getNodeType() == Node.ELEMENT_NODE) {
+	            	Element response = docOutput.createElement("response");
+	            	
 	            	Element eElement = (Element) nNode;
 	            	String command = nNode.getChildNodes().item(0).getNodeValue();
+	            	
+	            	response.setAttribute("command", command);
 	            	
 	            	NamedNodeMap atr = nNode.getAttributes();
 	            	List<String> attributes = new LinkedList<String>();
@@ -92,19 +100,20 @@ public class ClientHandler implements Runnable {
 	            	}
 	            	
 	            	output = processInput(command, attributes);
+	            	response.appendChild(output);
 	            }
-	            for(String item : output){
-					out.println(item);
-				}
 	        }
+	       
+	        //Send this!
+	        getString(docOutput);
 	        
     	}catch (Exception e) {
     		e.printStackTrace();
 		}
 	}
 	
-    private String[] processInput(String input, List<String> args) throws Exception{
-        String[] output = null;
+    private Element processInput(String input, List<String> args) throws Exception{
+        Element output = null;
        
         if(input.equalsIgnoreCase("playerlist"))
         	output = c.playerList(args);
@@ -120,4 +129,20 @@ public class ClientHandler implements Runnable {
         return output;
        }
 
+ // Converts a XML Document to a Sting array
+	private String[] getString(Document doc) throws Exception{
+		TransformerFactory transformerFactory = TransformerFactory.newInstance();
+		Transformer transformer = transformerFactory.newTransformer();
+		
+		StringWriter sw = new StringWriter();
+        StreamResult result = new StreamResult(sw);
+        DOMSource source = new DOMSource(doc);
+        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+        transformer.transform(source, result);
+        
+        String temp = sw.toString();
+        String[] output = temp.split("\\r?\\n");
+        
+    	return output;
+	}
 }
