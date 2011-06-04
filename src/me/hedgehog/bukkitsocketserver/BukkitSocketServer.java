@@ -22,7 +22,7 @@ public class BukkitSocketServer extends JavaPlugin{
 	public void onEnable()
 	{
 		// Print some basic info about the command.  This won't appear in the server's log file, as that would be unnecessary.
-		System.out.println("Loaded " + this.getDescription().getName() + " version " + this.getDescription().getVersion() + ".");
+		System.out.println("[" + this.getDescription().getName() + "] version " + this.getDescription().getVersion() + " loaded");
 		//PluginManager pm = this.getServer().getPluginManager();
 		//Register events
 		//pm.registerEvent(Event.Type.PLAYER_CHAT, playerListener, Event.Priority.Normal, this);
@@ -42,11 +42,8 @@ public class BukkitSocketServer extends JavaPlugin{
             //load stuff on statup here
         	port = Integer.parseInt(read("port"));
         }
-        	newServer();
-
-        //System.out.println(port);
-		
         
+        newServer();
 	}
 
 	// Goodbye, world.

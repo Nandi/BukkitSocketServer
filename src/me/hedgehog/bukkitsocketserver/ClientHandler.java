@@ -1,47 +1,37 @@
 package me.hedgehog.bukkitsocketserver;
 
-import javax.xml.parsers.*;
-import javax.xml.transform.*;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-
-import java.io.*;
-import java.lang.reflect.Field;
-import java.net.*;
-import java.util.Collection;
-import java.util.Iterator;
+import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.io.Reader;
+import java.io.StringReader;
+import java.net.Socket;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 
-import net.minecraft.server.MinecraftServer;
+import org.jdom.Attribute;
+import org.jdom.Document;
+import org.jdom.Element;
+import org.jdom.input.SAXBuilder;
+import org.jdom.output.Format;
+import org.jdom.output.XMLOutputter;
 
-import org.bukkit.World;
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.Player;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-
-@SuppressWarnings("unused")
 public class ClientHandler implements Runnable {
     private Socket server;
     private BukkitSocketServer plugin;
-    private String line;
     private CommandHandler c;
 
     public ClientHandler(Socket server, BukkitSocketServer plugin) {
     	this.server = server;
     	this.plugin = plugin;
-    	c = new CommandHandler(plugin);
+    	c = new CommandHandler(this.plugin);
     	
     }
 
     public void run () {
+    	String line;
     	try {
 			// Get input from the client
 			DataInputStream in = new DataInputStream (server.getInputStream());
@@ -51,11 +41,7 @@ public class ClientHandler implements Runnable {
 			
 			String input = "";
 			while((line = br.readLine()) != null && !line.equals("END")) {
-				try {
-					input += line;
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
+				input += line;
 			}
 			
 			decodeXML(input, out);
@@ -68,55 +54,56 @@ public class ClientHandler implements Runnable {
     }
 
 
-    private void decodeXML(String input, PrintStream out) {
+    @SuppressWarnings("unchecked")
+	private void decodeXML(String input, PrintStream out) {
     	try{
-	    	DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-	        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-	        InputSource is = new InputSource();
-	        is.setCharacterStream(new StringReader(input));
-	        Document docInput = dBuilder.parse(is);
-	        Document docOutput  = dBuilder.newDocument();
+    		
+    		SAXBuilder builder = new SAXBuilder();
+    		Reader in = new StringReader(input);
+    		Document docIn = null;
+    		Element output = null;
+    		
+    		docIn = builder.build(in);
+    		
+	        List<Element> nList = docIn.getRootElement().getChildren("command");
 	        
-	        NodeList nList = docInput.getElementsByTagName("command");
+	        Element rootElement = new Element("responseList");
 	        
-	        Node output = null;
-	        Element rootElement = docOutput.createElement("responseList");
-	        
-	        for(int i = 0; i < nList.getLength(); i++){
+	        for(int i = 0; i < nList.size(); i++){
 	        	
-	        	Node nNode = nList.item(i);	    
-	            if (nNode.getNodeType() == Node.ELEMENT_NODE) {
-	            	Element response = docOutput.createElement("response");
-	            	
-	            	Element eElement = (Element) nNode;
-	            	String command = nNode.getChildNodes().item(0).getNodeValue();
-	            	
-	            	response.setAttribute("command", command);
-	            	
-	            	NamedNodeMap atr = nNode.getAttributes();
-	            	List<String> attributes = new LinkedList<String>();
-	            	for(int j = 0; j < atr.getLength(); j++){
-	            		attributes.add(atr.item(j).getNodeValue());
-	            	}
-	            	
-	            	output = processInput(command, attributes);
-	            	response.appendChild(output);
-	            }
+	        	Element eElement = nList.get(i);
+            	Element response = new Element("response");
+            	
+            	String command = eElement.getText();
+            	
+            	response.setAttribute("command", command);
+            	
+            	List<Attribute> attr = eElement.getAttributes();
+            	List<String> attributes = new LinkedList<String>();
+            	for(int j = 0; j < attr.size(); j++){
+            		attributes.add(attr.get(j).getValue());
+            	}
+            	
+            	output = processInput(command, attributes);
+            	
+            	response.addContent(output);
+            	rootElement.addContent(response);
 	        }
-	       
-	        //Send this!
-	        String[] outStr = getString(docOutput);
 	        
-	        for(String s : outStr)
-	        	System.out.println(s);
+	        Document docOut = new Document(rootElement);
 	        
+	        XMLOutputter outputter = new XMLOutputter(Format.getPrettyFormat());
+	        outputter.output(docOut, out);
+	        out.println("END");
+	        out.flush();
+
     	}catch (Exception e) {
     		e.printStackTrace();
 		}
 	}
 	
-    private Node processInput(String input, List<String> args) throws Exception{
-        Node output = null;
+    private Element processInput(String input, List<String> args) throws Exception{
+        Element output = null;
        
         if(input.equalsIgnoreCase("playerlist"))
         	output = c.playerList(args);
@@ -131,21 +118,4 @@ public class ClientHandler implements Runnable {
         
         return output;
        }
-
- // Converts a XML Document to a Sting array
-	private String[] getString(Document doc) throws Exception{
-		TransformerFactory transformerFactory = TransformerFactory.newInstance();
-		Transformer transformer = transformerFactory.newTransformer();
-		
-		StringWriter sw = new StringWriter();
-        StreamResult result = new StreamResult(sw);
-        DOMSource source = new DOMSource(doc);
-        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-        transformer.transform(source, result);
-        
-        String temp = sw.toString();
-        String[] output = temp.split("\\r?\\n");
-        
-    	return output;
-	}
 }

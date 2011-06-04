@@ -8,9 +8,6 @@ import java.lang.reflect.Field;
 import java.util.LinkedList;
 import java.util.List;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-
 import net.minecraft.server.MinecraftServer;
 
 import org.bukkit.World;
@@ -18,26 +15,16 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
+
+import org.jdom.*;
 
 public class CommandHandler {
 	
 	BukkitSocketServer plugin;
-	DocumentBuilderFactory docFactory;
-	DocumentBuilder docBuilder;
-	Document doc;
 	
 	//Constructor
 	public CommandHandler(BukkitSocketServer parent){
 		plugin = parent;
-		try{
-			docFactory = DocumentBuilderFactory.newInstance();
-			docBuilder = docFactory.newDocumentBuilder();
-		}catch (Exception e) {
-			e.printStackTrace();
-		}
 	}
 	
 	// Kicks a list of players
@@ -59,10 +46,9 @@ public class CommandHandler {
 	}
 	
 	// Gets a list of all players, takes world name as arguments
-	public Node playerList(List<String> args){
-		doc  = docBuilder.newDocument();
-		Element rootElement = doc.createElement("worlds");
-		doc.appendChild(rootElement);
+	public Element playerList(List<String> args){
+		Element rootElement = new Element("worlds");
+		
 		List<World> worlds = new LinkedList<World>();
 		if(args.size() != 0){
 			for(int i = 0; i < args.size(); i++){
@@ -73,13 +59,14 @@ public class CommandHandler {
 		else{
     		worlds = plugin.getServer().getWorlds();
 		}
+		
 		for(int i=0;i<worlds.size();i++){
-			Element world = doc.createElement("world");
-			rootElement.appendChild(world);
+			Element world = new Element("world");
+			rootElement.addContent(world);
 			world.setAttribute("name", worlds.get(i).getName());
 			
-			Element players = doc.createElement("players");
-			world.appendChild(players);
+			Element players = new Element("players");
+			world.addContent(players);
 			
 			List<Player> playerList = worlds.get(i).getPlayers();
 			if(playerList.size() == 0){
@@ -89,22 +76,20 @@ public class CommandHandler {
 				players.setAttribute("empty", "false");
 			}
 			for(int j=0;j<playerList.size();j++){
-				Element player = doc.createElement("player");
+				Element player = new Element("player");
 				player.setAttribute("name", playerList.get(j).getName());
 				player.setAttribute("dispName", playerList.get(j).getDisplayName());
 				player.setAttribute("dead", Boolean.toString(playerList.get(j).isDead()));
-				players.appendChild(player);
+				players.addContent(player);
 			}
 		}
 		
-		return rootElement.cloneNode(true);
+		return rootElement;
 	}
 	
 	// Gets players inventory takes player name as argument
-	public Node playerInventory(List<String> args){
-		doc  = docBuilder.newDocument();
-		Element rootElement = doc.createElement("players");
-		doc.appendChild(rootElement);
+	public Element playerInventory(List<String> args){
+		Element rootElement = new Element("players");
 		
 		List<Player> players = new LinkedList<Player>();
 		for(String arg : args){
@@ -117,72 +102,64 @@ public class CommandHandler {
 		
 		for(Player p : players){
 			//format xml with inventory
-			Element player = doc.createElement("player");
+			Element player = new Element("player");
 			player.setAttribute("name", p.getName());
-			rootElement.appendChild(player);
+			rootElement.addContent(player);
 			
 			PlayerInventory inv = p.getInventory();
 			ItemStack[] invCont = inv.getContents();
 			
-			Element inventory = doc.createElement("inventory");
-			player.appendChild(inventory);
+			Element inventory = new Element("inventory");
+			player.addContent(inventory);
 			
 			for(int i = 0; i< invCont.length; i++){
-				Element item = doc.createElement("item");
+				Element item = new Element("item");
 				
 				
 				
 				//Check if empty slot!
 				if (invCont[i] == null){
-					System.out.println("Empty slot");
 					item.setAttribute("empty", Boolean.toString(true));
 				}
 				else {
-					System.out.println(invCont[i].toString());
 					item.setAttribute("empty", Boolean.toString(false));
 					item.setAttribute("id", Integer.toString(invCont[i].getTypeId()));
 					item.setAttribute("name", invCont[i].getType().name());
 					item.setAttribute("stackSize", Integer.toString(invCont[i].getAmount()));
 				}
-				inventory.appendChild(item);
+				inventory.addContent(item);
 			}
 		}
 
-		return rootElement.cloneNode(true);
-	}
-	
-	// Gets a standard responce to a unrecognized command
-	public Node errorString(String err){
-		doc  = docBuilder.newDocument();
-		
-		Element rootElement = doc.createElement("error");
-		rootElement.appendChild(doc.createTextNode(err));
-		doc.appendChild(rootElement);
-		
-		return rootElement.cloneNode(true);
+		return rootElement;
 	}
 	
 	// Gets the console output since last start
-	public Node getConsole(){
+	public Element getConsole(){
 		List<String> lines = readConsole();
-		doc  = docBuilder.newDocument();
 		
-		Element rootElement = doc.createElement("console");
-		doc.appendChild(rootElement);
+		Element rootElement = new Element("console");
+		
 		int start = 0;
 		for(int i=0;i<lines.size();i++){
 			if(lines.get(i).indexOf("[INFO] Starting minecraft server") != -1)
 				start = i;
 		}
 		for(int i=start;i<lines.size();i++){
-			Element line = doc.createElement("line");
-			line.appendChild(doc.createTextNode(lines.get(i)));
-			rootElement.appendChild(line);
+			Element line = new Element("line");
+			line.setText(lines.get(i));
+			rootElement.addContent(line);
 		}
-		
-		return rootElement.cloneNode(true);
+		return rootElement;
 	}
 
+	// Gets a standard responce to a unrecognized command
+	public Element errorString(String err){
+		Element rootElement = new Element("error");
+		rootElement.setText(err);
+		
+		return rootElement;
+	}
 	
 	// Read the server log
 	private List<String> readConsole(){
