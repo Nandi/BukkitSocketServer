@@ -18,6 +18,7 @@ import org.jdom.input.SAXBuilder;
 import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
 
+@SuppressWarnings("unused")
 public class ClientHandler implements Runnable {
     private Socket server;
     private BukkitSocketServer plugin;
@@ -43,7 +44,7 @@ public class ClientHandler implements Runnable {
 			while((line = br.readLine()) != null && !line.equals("END")) {
 				input += line;
 			}
-			
+			System.out.println("[" + plugin.getDescription().getName() + "]: Message resiced");
 			decodeXML(input, out);
 
 			server.close();
@@ -54,7 +55,8 @@ public class ClientHandler implements Runnable {
     }
 
 
-    @SuppressWarnings("unchecked")
+    
+	@SuppressWarnings("unchecked")
 	private void decodeXML(String input, PrintStream out) {
     	try{
     		
@@ -92,10 +94,13 @@ public class ClientHandler implements Runnable {
 	        
 	        Document docOut = new Document(rootElement);
 	        
-	        XMLOutputter outputter = new XMLOutputter(Format.getPrettyFormat());
+	        //XMLOutputter outputter = new XMLOutputter(Format.getPrettyFormat());
+	        XMLOutputter outputter = new XMLOutputter();
 	        outputter.output(docOut, out);
 	        out.println("END");
 	        out.flush();
+	        
+	        System.out.println("[" + plugin.getDescription().getName() + "]: Message sent");
 
     	}catch (Exception e) {
     		e.printStackTrace();
