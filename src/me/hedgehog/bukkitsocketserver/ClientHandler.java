@@ -121,15 +121,19 @@ public class ClientHandler implements Runnable {
 	
     private Element processInput(String input, List<String> args) throws Exception{
         Element output = null;
-       
-        if(input.equalsIgnoreCase("playerlist"))
-        	output = c.playerList(args);
-        else if(input.equalsIgnoreCase("console"))
+        
+        if(input.equalsIgnoreCase("console"))
         	output = c.getConsole();
-        else if(input.equalsIgnoreCase("playerinventory"))
+        else if(input.equalsIgnoreCase("playerList"))
+        	output = c.playerList(args);
+        else if(input.equalsIgnoreCase("playerInventory"))
         	output = c.playerInventory(args);
+        else if(input.equalsIgnoreCase("pluginList"))
+        	output = c.pluginList();
         else if(input.equalsIgnoreCase("kickPlayer"))
         	c.kickPlayer(args);
+        else if(input.equalsIgnoreCase("banPlayer"))
+        	c.banPlayer(args);
         else
         	output = c.errorString("Server does not recognize the command."); 
         

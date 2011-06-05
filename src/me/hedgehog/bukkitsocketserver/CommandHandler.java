@@ -15,6 +15,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.plugin.Plugin;
 
 import org.jdom.*;
 
@@ -43,6 +44,21 @@ public class CommandHandler {
 				consoleCommand("ban " + arg);
 			}
 		}
+	}
+	
+	// Gets plugin list
+	public Element pluginList(){
+		Element rootElement = new Element("pugins");
+		
+		Plugin[] pluginList = plugin.getServer().getPluginManager().getPlugins();
+		
+		for(Plugin p : pluginList){
+			Element plug = new Element("plugin");
+			plug.setAttribute("name",p.getDescription().getName());
+			plug.setAttribute("version", p.getDescription().getVersion());
+		}
+		
+		return rootElement;
 	}
 	
 	// Gets a list of all players, takes world name as arguments
