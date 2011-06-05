@@ -3,6 +3,7 @@ package me.hedgehog.bukkitsocketserver;
 import java.util.HashMap;
 import java.util.logging.Logger;
 import java.io.*;
+import java.net.ServerSocket;
 
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -15,6 +16,7 @@ public class BukkitSocketServer extends JavaPlugin{
 	static String mainDirectory = "plugins/BukkitSocketServer";
 	File file = new File(mainDirectory + File.separator + "config.yml");
 	Thread server;
+	public ServerSocket socket = null;
 	int port;
 	
 	
@@ -50,7 +52,10 @@ public class BukkitSocketServer extends JavaPlugin{
 	public void onDisable()
 	{
 		// If we had any persistence, we might do a final save here.
-		
+		try{
+			if(socket != null)
+				socket.close();
+		}catch (Exception e) {}
 	}
 
 	public Configuration load(){

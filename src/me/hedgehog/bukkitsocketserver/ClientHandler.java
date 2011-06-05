@@ -102,6 +102,8 @@ public class ClientHandler implements Runnable {
 	        
 	        String[] arr = temp.split("\n\r");
 	        
+	        System.out.println(arr.length);
+	        
 	        for(String s : arr){
 	        	out.println(s);
 	        }
