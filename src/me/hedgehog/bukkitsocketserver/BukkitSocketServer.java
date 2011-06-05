@@ -12,7 +12,7 @@ public class BukkitSocketServer extends JavaPlugin{
 	Logger log = Logger.getLogger("MineCraft");
 	//private final TCPComsListener playerListener = new TCPComsListener(this);
 	public static HashMap<Player, Boolean> playerList = new HashMap<Player, Boolean>();
-	static String mainDirectory = "plugins/TCPComs";
+	static String mainDirectory = "plugins/BukkitSocketServer";
 	File file = new File(mainDirectory + File.separator + "config.yml");
 	Thread server;
 	int port;

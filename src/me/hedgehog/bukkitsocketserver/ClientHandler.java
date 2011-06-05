@@ -41,10 +41,10 @@ public class ClientHandler implements Runnable {
 			PrintStream out = new PrintStream(server.getOutputStream());
 			
 			String input = "";
-			while((line = br.readLine()) != null && !line.equals("END")) {
+			while((line = br.readLine()) != null && !line.equals("")) {
 				input += line;
 			}
-			System.out.println("[" + plugin.getDescription().getName() + "]: Message resiced");
+			System.out.println("[" + plugin.getDescription().getName() + "]: Message recived");
 			decodeXML(input, out);
 
 			server.close();
@@ -94,10 +94,20 @@ public class ClientHandler implements Runnable {
 	        
 	        Document docOut = new Document(rootElement);
 	        
-	        //XMLOutputter outputter = new XMLOutputter(Format.getPrettyFormat());
-	        XMLOutputter outputter = new XMLOutputter();
-	        outputter.output(docOut, out);
-	        out.println("END");
+	        XMLOutputter outputter = new XMLOutputter(Format.getPrettyFormat());
+	        //XMLOutputter outputter = new XMLOutputter();
+	        StringBuffer process = new StringBuffer();
+	        
+	        String temp = outputter.outputString(docOut).trim();
+	        
+	        String[] arr = temp.split("\n\r");
+	        
+	        for(String s : arr){
+	        	out.println(s);
+	        }
+	        
+	        //out.println(temp);
+	        out.println("\n\r");
 	        out.flush();
 	        
 	        System.out.println("[" + plugin.getDescription().getName() + "]: Message sent");
