@@ -1,31 +1,25 @@
 package me.hedgehog.bukkitsocketserver;
 
-import java.util.HashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.io.*;
-import java.net.ServerSocket;
 
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.config.Configuration;
 
 public class BukkitSocketServer extends JavaPlugin{
-	Logger log = Logger.getLogger("MineCraft");
-	//private final TCPComsListener playerListener = new TCPComsListener(this);
-	public static HashMap<Player, Boolean> playerList = new HashMap<Player, Boolean>();
+	protected static final Logger log = Logger.getLogger("Minecraft");
+	
 	static String mainDirectory = "plugins/BukkitSocketServer";
 	File file = new File(mainDirectory + File.separator + "config.yml");
-	Thread server;
-	public ServerSocket socket = null;
+	HTTPServer httpServer;
 	int port;
 	
 	
 	// Hello, world!
-	public void onEnable()
-	{
-		// Print some basic info about the command.  This won't appear in the server's log file, as that would be unnecessary.
-		System.out.println("[" + this.getDescription().getName() + "] version " + this.getDescription().getVersion() + " loaded");
-		
+	public void onEnable(){
+		log.info("[" + this.getDescription().getName() + "] version " + this.getDescription().getVersion() + " loaded");
+				
 		//Load options
 		new File(mainDirectory).mkdir();
 
@@ -34,24 +28,27 @@ public class BukkitSocketServer extends JavaPlugin{
                 file.createNewFile();
                 write("port", "1234");
                 port = 1234;
-            } catch (Exception ex) {
-                ex.printStackTrace();
+            } catch (IOException ioe) {
+            	log.log(Level.SEVERE, "[BukkitSocketServer] Could not create config file at " + file.getPath(), ioe);
             }
         } else {
-            //load stuff on statup here
         	port = Integer.parseInt(read("port"));
         }
-        newServer();
+        
+        httpServer = new HTTPServer(this, port);
+        try{
+        	httpServer.startServer();
+        }catch (IOException ioe) {
+			ioe.printStackTrace();
+		}
 	}
 
 	// Goodbye, world.
-	public void onDisable()
-	{
-		// If we had any persistence, we might do a final save here.
-		try{
-			if(socket != null)
-				socket.close();
-		}catch (Exception e) {}
+	public void onDisable(){
+		if(httpServer != null){
+			httpServer.shutdown();
+			httpServer = null;
+		}
 	}
 
 	public Configuration load(){
@@ -66,14 +63,8 @@ public class BukkitSocketServer extends JavaPlugin{
         }
         return null;
     }
-	
-	public void newServer(){
-		server = null;
-		server = new Thread(new HTTPServer(this));
-		server.start();
-	}
-	
-	public void write(String root, Object x){ //just so you know, you may want to write a boolean, integer or double to the file as well, therefore u wouldnt write it to the file as "String" you would change it to something else
+
+	public void write(String root, Object x){
     	Configuration config = load();
         config.setProperty(root, x);
         config.save();
@@ -83,17 +74,4 @@ public class BukkitSocketServer extends JavaPlugin{
     	Configuration config = load();
         return config.getString(root);
     }
-	
-	/*public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args){
-		 
-		if(cmd.getName().equalsIgnoreCase("tcp")){ // If the player typed /basic then do the following...
-			if(args[0].equalsIgnoreCase("dirt")){
-					String com = "give Hedgehog_ 3 64";
-					System.out.println(com);
-					consoleCommand(com);
-			}
-			return true;
-		} //If this has happened the function will break and return true. if this hasn't happened the a value of false will be returned.
-		return false;
-	}*/
 }
