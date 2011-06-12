@@ -42,6 +42,7 @@ public class CommandHandler {
 			args.put(temp[0], temp[1].split(","));
 		}
 		String get = args.get("get")[0];
+		
 		if(get.equalsIgnoreCase("kickPlayer")){
 			kickPlayer(args.get("name"));
 		}
