@@ -1,2 +1,4 @@
 HTTP server integrated with mincraft bukkit server.
 Uses json to communicate with a client.
+
+Most of the http server code is copied from the webbukkit project: https://github.com/webbukkit/webbukkit
