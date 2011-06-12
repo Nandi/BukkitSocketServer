@@ -1,142 +1,207 @@
 package me.hedgehog.bukkitsocketserver;
 
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
-import java.io.Reader;
-import java.io.StringReader;
-import java.net.Socket;
-import java.util.LinkedList;
-import java.util.List;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import org.jdom.Attribute;
-import org.jdom.Document;
-import org.jdom.Element;
-import org.jdom.input.SAXBuilder;
-import org.jdom.output.Format;
-import org.jdom.output.XMLOutputter;
+import me.hedgehog.bukkitsocketserver.tools.*;
 
 @SuppressWarnings("unused")
 public class ClientHandler implements Runnable {
-    private Socket server;
-    private BukkitSocketServer plugin;
-    private CommandHandler c;
+	protected static final Logger log = Logger.getLogger("Minecraft");
+	
+	private static Pattern requestHeaderLine = Pattern.compile("^(\\S+)\\s+(\\S+)\\s+HTTP/(.+)$");
+	private static Pattern requestHeaderField = Pattern.compile("^([^:]+):\\s*(.+)$");
+	private Socket socket;
+	private HttpServer server;
+	private BukkitSocketServer plugin;
+	private CommandHandler commands;
+	
+	private PrintStream printOut;
+	private StringWriter sw = new StringWriter();
+	private Matcher requestHeaderLineMatcher;
+	private Matcher requestHeaderFieldMatcher;
 
-    public ClientHandler(Socket server, BukkitSocketServer plugin) {
-    	this.server = server;
-    	this.plugin = plugin;
-    	c = new CommandHandler(this.plugin);
-    	
-    }
-
-    public void run () {
-    	String line;
-    	try {
-			// Get input from the client
-			DataInputStream in = new DataInputStream (server.getInputStream());
-			BufferedReader br = new BufferedReader(new InputStreamReader(in));
-			
-			PrintStream out = new PrintStream(server.getOutputStream());
-			
-			String input = "";
-			while((line = br.readLine()) != null && !line.equals("")) {
-				input += line;
-			}
-			System.out.println("[" + plugin.getDescription().getName() + "]: Message recived");
-			decodeXML(input, out);
-
-			server.close();
-    	} catch (IOException ioe) {
-    		System.out.println("IOException on socket listen: " + ioe);
-    		ioe.printStackTrace();
-    	}
-    }
-
-
-    
-	@SuppressWarnings("unchecked")
-	private void decodeXML(String input, PrintStream out) {
-    	try{
-    		
-    		SAXBuilder builder = new SAXBuilder();
-    		Reader in = new StringReader(input);
-    		Document docIn = null;
-    		Element output = null;
-    		
-    		docIn = builder.build(in);
-    		
-	        List<Element> nList = docIn.getRootElement().getChildren("command");
-	        
-	        Element rootElement = new Element("responseList");
-	        
-	        for(int i = 0; i < nList.size(); i++){
-	        	
-	        	Element eElement = nList.get(i);
-            	Element response = new Element("response");
-            	
-            	String command = eElement.getText();
-            	
-            	response.setAttribute("command", command);
-            	
-            	List<Attribute> attr = eElement.getAttributes();
-            	List<String> attributes = new LinkedList<String>();
-            	for(int j = 0; j < attr.size(); j++){
-            		attributes.add(attr.get(j).getValue());
-            	}
-            	
-            	output = processInput(command, attributes);
-            	
-            	response.addContent(output);
-            	rootElement.addContent(response);
-	        }
-	        
-	        Document docOut = new Document(rootElement);
-	        
-	        XMLOutputter outputter = new XMLOutputter(Format.getPrettyFormat());
-	        //XMLOutputter outputter = new XMLOutputter();
-	        StringBuffer process = new StringBuffer();
-	        
-	        String temp = outputter.outputString(docOut).trim();
-	        
-	        String[] arr = temp.split("\n\r");
-	        
-	        System.out.println(arr.length);
-	        
-	        for(String s : arr){
-	        	out.println(s);
-	        }
-	        
-	        //out.println(temp);
-	        out.println("\n\r");
-	        out.flush();
-	        
-	        System.out.println("[" + plugin.getDescription().getName() + "]: Message sent");
-
-    	}catch (Exception e) {
-    		e.printStackTrace();
-		}
+	public ClientHandler(Socket socket, HttpServer server, BukkitSocketServer plugin) {
+		this.socket = socket;
+		this.server = server;
+		this.plugin = plugin;
+		commands = new CommandHandler(this.plugin);
 	}
 	
-    private Element processInput(String input, List<String> args) throws Exception{
-        Element output = null;
-        
-        if(input.equalsIgnoreCase("console"))
-        	output = c.getConsole();
-        else if(input.equalsIgnoreCase("playerList"))
-        	output = c.playerList(args);
-        else if(input.equalsIgnoreCase("playerInventory"))
-        	output = c.playerInventory(args);
-        else if(input.equalsIgnoreCase("pluginList"))
-        	output = c.pluginList();
-        else if(input.equalsIgnoreCase("kickPlayer"))
-        	c.kickPlayer(args);
-        else if(input.equalsIgnoreCase("banPlayer"))
-        	c.banPlayer(args);
-        else
-        	output = c.errorString("Server does not recognize the command."); 
-        
-        return output;
-       }
+	private final static void readLine(InputStream in, StringWriter sw) throws IOException {
+		int readc;
+		while((readc = in.read()) > 0) {
+			char c = (char)readc;
+			if (c == '\n')
+				break;
+			else if (c != '\r')
+				sw.append(c);
+		}
+	}
+    
+	private final String readLine(InputStream in) throws IOException {
+		readLine(in, sw);
+		String r = sw.toString();
+		sw.getBuffer().setLength(0);
+		return r;
+	}
+	
+	private final boolean readRequestHeader(InputStream in, HttpRequest request) throws IOException{
+		String statusLine = readLine(in);
+		
+		if(statusLine == null)
+			return false;
+			
+		if(requestHeaderLineMatcher == null)
+			requestHeaderLineMatcher = requestHeaderLine.matcher(statusLine);
+		else
+			requestHeaderLineMatcher.reset(statusLine);
+		
+		Matcher m = requestHeaderLineMatcher;
+		if(!m.matches())
+			return false;
+		request.method = m.group(1);
+		{
+			String[] temp;
+			if((temp = m.group(2).split("?")).length == 0){
+				request.path = temp[0];
+				request.query = temp[1];
+			}
+			else
+				request.path = m.group(2);
+		}
+		request.version = m.group(3);
+		
+		String line;
+		while(!(line = readLine(in)).equalsIgnoreCase("")){
+			if(requestHeaderFieldMatcher == null)
+				requestHeaderFieldMatcher = requestHeaderField.matcher(line);
+			else
+				requestHeaderFieldMatcher.reset(line);
+			
+			m = requestHeaderFieldMatcher;
+			
+			if(m.matches()){
+				String fieldName = m.group(1);
+				String fieldValue = m.group(2);
+				request.fields.put(fieldName, fieldValue);
+			}
+		}
+		return true;
+	}
+	
+	public static final void writeResponseHeader(PrintStream out, HttpResponse response) throws IOException {
+		out.append("HTTP/");
+		out.append(response.version);
+		out.append(" ");
+		out.append(String.valueOf(response.status.getCode()));
+		out.append(" ");
+		out.append(response.status.getText());
+		out.append("\r\n");
+		for(Entry<String, String> field : response.fields.entrySet()){
+			out.append(field.getKey());
+			out.append(": ");
+			out.append(field.getValue());
+			out.append("\r\n");
+		}
+		out.append("\r\n");
+		out.flush();
+	}
+	
+	public void writeResponseHeader(HttpResponse response) throws IOException {
+		writeResponseHeader(printOut, response);
+	}
+
+	public void run() {
+		try{
+			if(socket == null)
+				return;
+			socket.setSoTimeout(5000);
+			InputStream in = socket.getInputStream();
+			BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream(), 40960);
+			
+			printOut = new PrintStream(out, false);
+			while(true){
+				HttpRequest request = new HttpRequest();
+				
+				if(!readRequestHeader(in, request)){
+					socket.close();
+					return;
+				}
+				
+				long bound = -1;
+				BoundInputStream boundBody = null;
+				{
+					String contentLengthStr = request.fields.get(HttpField.ContentLength);
+					if(contentLengthStr != null){
+						try{
+							bound = Long.parseLong(contentLengthStr);
+						}catch (NumberFormatException e) {}
+						
+						if(bound >= 0)
+							request.body = boundBody = new BoundInputStream(in, bound);
+						else
+							request.body = in;
+					}
+				}
+				
+				NonClosableOutputStream  nonClosableResponseBody = new NonClosableOutputStream(out);
+				final HttpResponse response = new HttpResponse(this, nonClosableResponseBody);
+				
+				HttpContext context = new HttpContext(request, response, this);
+				
+				nonClosableResponseBody.close();
+				
+				if(bound > 0 && boundBody.skip(bound)< bound){
+					//socket.close();
+					//return;
+				}
+				
+				String connection = response.fields.get("Connection");
+				String contentLength = response.fields.get("Content-Length");
+				if(contentLength == null && connection == null){
+					response.fields.put("Content-Length", "0");
+					OutputStream responseBody = response.getBody();
+					
+					if(responseBody == null){
+						out.flush();
+						socket.close();
+						return;
+					}
+				}
+				
+				if(connection != null && connection.equals("close")){
+					out.flush();
+					socket.close();
+					return;
+				}
+				
+				out.flush();
+			}
+		}catch(IOException ioe){
+			if(socket != null){
+				try{
+					socket.close();
+				}catch (IOException e) {
+				}
+			}
+			return;
+		}catch (Exception e){
+			if(socket != null){
+				try{
+					socket.close();
+				}catch (IOException ioe) {
+				}
+			}
+			log.log(Level.SEVERE, "[BukkitSocketServer] Exception while handling request: ", e);
+			e.printStackTrace();
+			return;
+		}
+	}
 }
