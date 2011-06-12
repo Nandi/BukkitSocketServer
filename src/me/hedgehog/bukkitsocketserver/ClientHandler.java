@@ -2,7 +2,6 @@ package me.hedgehog.bukkitsocketserver;
 
 import java.io.*;
 import java.net.*;
-import java.util.*;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -11,14 +10,12 @@ import java.util.regex.Pattern;
 
 import me.hedgehog.bukkitsocketserver.tools.*;
 
-@SuppressWarnings("unused")
 public class ClientHandler implements Runnable {
 	protected static final Logger log = Logger.getLogger("Minecraft");
 	
 	private static Pattern requestHeaderLine = Pattern.compile("^(\\S+)\\s+(\\S+)\\s+HTTP/(.+)$");
 	private static Pattern requestHeaderField = Pattern.compile("^([^:]+):\\s*(.+)$");
 	private Socket socket;
-	private HttpServer server;
 	private BukkitSocketServer plugin;
 	private CommandHandler commands;
 	
@@ -27,11 +24,9 @@ public class ClientHandler implements Runnable {
 	private Matcher requestHeaderLineMatcher;
 	private Matcher requestHeaderFieldMatcher;
 
-	public ClientHandler(Socket socket, HttpServer server, BukkitSocketServer plugin) {
+	public ClientHandler(Socket socket, BukkitSocketServer plugin) {
 		this.socket = socket;
-		this.server = server;
 		this.plugin = plugin;
-		commands = new CommandHandler(this.plugin);
 	}
 	
 	private final static void readLine(InputStream in, StringWriter sw) throws IOException {
@@ -67,14 +62,15 @@ public class ClientHandler implements Runnable {
 		if(!m.matches())
 			return false;
 		request.method = m.group(1);
+		
+		//Find a regex that includes the possebility of queries
 		{
 			String[] temp;
-			if((temp = m.group(2).split("?")).length == 0){
-				request.path = temp[0];
+			if((temp = m.group(2).split("\\?")).length > 1){
 				request.query = temp[1];
 			}
-			else
-				request.path = m.group(2);
+			request.path = temp[0];
+				
 		}
 		request.version = m.group(3);
 		
@@ -150,11 +146,16 @@ public class ClientHandler implements Runnable {
 							request.body = in;
 					}
 				}
-				
+
 				NonClosableOutputStream  nonClosableResponseBody = new NonClosableOutputStream(out);
 				final HttpResponse response = new HttpResponse(this, nonClosableResponseBody);
 				
 				HttpContext context = new HttpContext(request, response, this);
+				
+				commands = new CommandHandler(plugin, context);
+				
+				//Write response here!
+				commands.compileResponse();
 				
 				nonClosableResponseBody.close();
 				
@@ -181,7 +182,6 @@ public class ClientHandler implements Runnable {
 					socket.close();
 					return;
 				}
-				
 				out.flush();
 			}
 		}catch(IOException ioe){
