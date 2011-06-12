@@ -5,33 +5,33 @@ import java.net.*;
 
 public class HTTPServer implements Runnable {
 	BukkitSocketServer plugin;
-	ServerSocket listener;
+	ServerSocket socket;
 	public Boolean tRunning = true;
 	int port, maxConnections=0;
 	
 	public HTTPServer(BukkitSocketServer parent){
 		plugin = parent;
 		port = plugin.port;
-		plugin.socket = listener;
+		plugin.socket = socket;
 	}
 	
 	public void kill(){
-		if(listener != null){
-			try {listener.close();
+		if(socket != null){
+			try {socket.close();
 			} catch (IOException e) {e.printStackTrace();}
 		}
 	}
 	
 	public void run(){
 		try{
-			listener = new ServerSocket(port);
+			socket = new ServerSocket(port);
 			Socket server;
 			int i = 0;
 
 			while(tRunning &&((maxConnections == 0) ||(i++ < maxConnections))){
 				ClientHandler connection;
 
-				server = listener.accept();
+				server = socket.accept();
 				connection = new ClientHandler(server, plugin);
 				Thread t = new Thread(connection);
 				
@@ -41,8 +41,8 @@ public class HTTPServer implements Runnable {
 			System.out.println("IOException on socket listen: " + ioe);
 			ioe.printStackTrace();
 		}finally{
-			if(listener != null){
-				try {listener.close();
+			if(socket != null){
+				try {socket.close();
 				} catch (IOException e) {e.printStackTrace();}
 			}
 		}
