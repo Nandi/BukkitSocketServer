@@ -12,7 +12,7 @@ public class BukkitSocketServer extends JavaPlugin{
 	
 	static String mainDirectory = "plugins/BukkitSocketServer";
 	File file = new File(mainDirectory + File.separator + "config.yml");
-	HTTPServer httpServer;
+	HttpServer httpServer;
 	int port;
 	
 	
@@ -35,7 +35,7 @@ public class BukkitSocketServer extends JavaPlugin{
         	port = Integer.parseInt(read("port"));
         }
         
-        httpServer = new HTTPServer(this, port);
+        httpServer = new HttpServer(this, port);
         try{
         	httpServer.startServer();
         }catch (IOException ioe) {
