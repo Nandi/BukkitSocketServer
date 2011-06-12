@@ -2,7 +2,7 @@ HTTP server integrated with mincraft bukkit server.
 Uses json to communicate with a client.
 
 Usage:
-http://www.example.com:1234?get=<command>&<key>=<value>
+example.com:1234?get=<command>&<key>=<value>
 
 Commands:
 	playerList:
@@ -40,9 +40,9 @@ Commands:
 			no keys.
 	
 Exsamples:
-	http://www.example.com:1234?get=playerinventory&name=Hedgehog_,notch
-	http://www.example.com:1234?get=getconsole
-	http://www.example.com:1234?get=playerlist
-	http://www.example.com:1234?get=banPlayer&name=hedgehog_
+	example.com:1234?get=playerinventory&name=Hedgehog_,notch
+	example.com:1234?get=getconsole
+	example.com:1234?get=playerlist
+	example.com:1234?get=banPlayer&name=hedgehog_
 
 Most of the http server code is copied from the webbukkit project: https://github.com/webbukkit/webbukkit
