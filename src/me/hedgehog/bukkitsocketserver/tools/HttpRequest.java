@@ -7,6 +7,7 @@ import java.util.Map;
 public class HttpRequest {
     public String method;
     public String path;
+    public String query;
     public String version;
     public Map<String, String> fields = new HashMap<String, String>();
     public InputStream body;    
