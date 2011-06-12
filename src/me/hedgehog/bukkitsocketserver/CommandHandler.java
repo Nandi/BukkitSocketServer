@@ -12,6 +12,7 @@ import net.minecraft.server.MinecraftServer;
 
 import org.bukkit.craftbukkit.CraftServer;
 
+@SuppressWarnings("unused")
 public class CommandHandler {
 	
 	BukkitSocketServer plugin;
