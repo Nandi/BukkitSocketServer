@@ -1,4 +1,5 @@
 package me.hedgehog.bukkitsocketserver.tools;
+
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
