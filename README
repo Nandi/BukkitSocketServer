@@ -1,4 +1,48 @@
 HTTP server integrated with mincraft bukkit server.
 Uses json to communicate with a client.
 
+Usage:
+http://www.example.com:1234?get=<command>&<key>=<value>
+
+Commands:
+	playerList:
+		-Gets a list of players.
+		key:
+			world: optional
+				- Name of the world(s) to get players from, if not set get from all worlds. Seperate world names with a comma.
+	
+	playerInventory:
+		-Get players inventory.
+		key:
+			name: required
+				- Name of the player(s) to retrive the inventory from. Seperate player names with a comma.
+				
+	pluginList:
+		-Gets all active plugins.
+		key:
+			no keys.
+			
+	kickPlayer:
+		-Kicks players from the server.
+		key:
+			name: required
+				- Name of the player(s) to kick. Seperate player names with a comma.
+				
+	banPlayer:
+		-Bans players from the server.
+		key:
+			name: required
+				- Name of the player(s) to ban. Seperate player names with a comma.
+	
+	getConsole:
+		-Gets the console output.
+		key:
+			no keys.
+	
+Exsamples:
+	http://www.example.com:1234?get=playerinventory&name=Hedgehog_,notch
+	http://www.example.com:1234?get=getconsole
+	http://www.example.com:1234?get=playerlist
+	http://www.example.com:1234?get=banPlayer&name=hedgehog_
+
 Most of the http server code is copied from the webbukkit project: https://github.com/webbukkit/webbukkit
