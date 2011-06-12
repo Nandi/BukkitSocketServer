@@ -2,49 +2,55 @@ package me.hedgehog.bukkitsocketserver;
 
 import java.io.*;
 import java.net.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-public class HTTPServer implements Runnable {
-	BukkitSocketServer plugin;
-	ServerSocket socket;
-	public Boolean tRunning = true;
-	int port, maxConnections=0;
+public class HTTPServer extends Thread {
+	protected static final Logger log = Logger.getLogger("Minecraft");
 	
-	public HTTPServer(BukkitSocketServer parent){
+	BukkitSocketServer plugin;
+	ServerSocket sock;
+	
+	private Thread listeningThread;
+	int port;
+	
+	public HTTPServer(BukkitSocketServer parent, int port){
 		plugin = parent;
-		port = plugin.port;
-		plugin.socket = socket;
+		this.port = port;
 	}
 	
-	public void kill(){
-		if(socket != null){
-			try {socket.close();
-			} catch (IOException e) {e.printStackTrace();}
-		}
+	public void startServer() throws IOException{
+		sock = new ServerSocket(port);
+		listeningThread = this;
+		start();
+		log.info("[BukkitSocketServer] Webserver started on port: "+port);
 	}
 	
 	public void run(){
-		try{
-			socket = new ServerSocket(port);
-			Socket server;
-			int i = 0;
-
-			while(tRunning &&((maxConnections == 0) ||(i++ < maxConnections))){
+		
+		while(listeningThread == Thread.currentThread()){
+			try{
 				ClientHandler connection;
-
-				server = socket.accept();
-				connection = new ClientHandler(server, plugin);
+				Socket socket = sock.accept();
+				connection = new ClientHandler(socket, plugin);
 				Thread t = new Thread(connection);
 				
 				t.start();
-			}
-		} catch (IOException ioe) {
-			System.out.println("IOException on socket listen: " + ioe);
-			ioe.printStackTrace();
-		}finally{
-			if(socket != null){
-				try {socket.close();
-				} catch (IOException e) {e.printStackTrace();}
+				
+			} catch (IOException ioe) {
+				log.log(Level.SEVERE, "[BukkitSocketServer] Exception on WebServer-thread", ioe);
 			}
 		}
+	}
+	
+	public void shutdown(){
+		log.info("[BukkitSocketServer] Shutting down webserver...");
+		try{
+			if(sock != null)
+				sock.close();
+		}catch (IOException ioe) {
+			log.log(Level.INFO, "[BukkitSocketServer] Exception while closing socket for webserver shutdown", ioe);			
+		}
+		listeningThread = null;
 	}
 }
