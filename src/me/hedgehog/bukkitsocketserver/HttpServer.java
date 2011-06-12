@@ -32,7 +32,7 @@ public class HttpServer extends Thread {
 			try{
 				ClientHandler connection;
 				Socket socket = sock.accept();
-				connection = new ClientHandler(socket, plugin);
+				connection = new ClientHandler(socket, this, plugin);
 				Thread t = new Thread(connection);
 				
 				t.start();
