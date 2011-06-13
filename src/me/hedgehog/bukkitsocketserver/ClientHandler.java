@@ -119,6 +119,9 @@ public class ClientHandler implements Runnable {
 			if(socket == null)
 				return;
 			socket.setSoTimeout(5000);
+			
+			//BukkitSocketServer.tokens.put(, null);
+			
 			InputStream in = socket.getInputStream();
 			BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream(), 40960);
 			
@@ -126,11 +129,19 @@ public class ClientHandler implements Runnable {
 			while(true){
 				HttpRequest request = new HttpRequest();
 				
+				request.remoteAddr = ((InetSocketAddress)socket.getRemoteSocketAddress()).getAddress();
+				
+				if(!BukkitSocketServer.tokens.containsKey(request.remoteAddr))
+					BukkitSocketServer.tokens.put(request.remoteAddr, null);
+				
 				if(!readRequestHeader(in, request)){
+					if(BukkitSocketServer.tokens.containsKey(request.remoteAddr))
+						BukkitSocketServer.tokens.remove(request.remoteAddr);
+					
 					socket.close();
 					return;
 				}
-				
+
 				long bound = -1;
 				BoundInputStream boundBody = null;
 				{
@@ -172,6 +183,10 @@ public class ClientHandler implements Runnable {
 					
 					if(responseBody == null){
 						out.flush();
+						
+						if(BukkitSocketServer.tokens.containsKey(context.request.remoteAddr))
+							BukkitSocketServer.tokens.remove(context.request.remoteAddr);
+						
 						socket.close();
 						return;
 					}
@@ -179,6 +194,10 @@ public class ClientHandler implements Runnable {
 				
 				if(connection != null && connection.equals("close")){
 					out.flush();
+					
+					if(BukkitSocketServer.tokens.containsKey(context.request.remoteAddr))
+						BukkitSocketServer.tokens.remove(context.request.remoteAddr);
+					
 					socket.close();
 					return;
 				}
@@ -187,6 +206,9 @@ public class ClientHandler implements Runnable {
 		}catch(IOException ioe){
 			if(socket != null){
 				try{
+					if(BukkitSocketServer.tokens.containsKey((InetSocketAddress)socket.getRemoteSocketAddress()))
+						BukkitSocketServer.tokens.remove((InetSocketAddress)socket.getRemoteSocketAddress());
+					
 					socket.close();
 				}catch (IOException e) {
 				}
@@ -195,6 +217,9 @@ public class ClientHandler implements Runnable {
 		}catch (Exception e){
 			if(socket != null){
 				try{
+					if(BukkitSocketServer.tokens.containsKey((InetSocketAddress)socket.getRemoteSocketAddress()))
+						BukkitSocketServer.tokens.remove((InetSocketAddress)socket.getRemoteSocketAddress());
+					
 					socket.close();
 				}catch (IOException ioe) {
 				}
