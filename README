@@ -5,44 +5,63 @@ Usage:
 example.com:1234?get=<command>&<key>=<value>
 
 Commands:
+	token:
+		- Returns a token to be used with other commands
+		key:
+			user: required
+				- username stated in config file.
+			pass: required
+				- password hash encrypted with sha512 
+
 	playerList:
-		-Gets a list of players.
+		- Gets a list of players.
 		key:
 			world: optional
 				- Name of the world(s) to get players from, if not set get from all worlds. Seperate world names with a comma.
+			token: required
+				- Token provided by the login command.
 	
 	playerInventory:
-		-Get players inventory.
+		- Get players inventory.
 		key:
 			name: required
 				- Name of the player(s) to retrive the inventory from. Seperate player names with a comma.
+			token: required
+				- Token provided by the login command.
 				
 	pluginList:
-		-Gets all active plugins.
+		- Gets all active plugins.
 		key:
-			no keys.
+			token: required
+				- Token provided by the login command.
 			
 	kickPlayer:
-		-Kicks players from the server.
+		- Kicks players from the server.
 		key:
 			name: required
 				- Name of the player(s) to kick. Seperate player names with a comma.
+			token: required
+				- Token provided by the login command.
 				
 	banPlayer:
-		-Bans players from the server.
+		- Bans players from the server.
 		key:
 			name: required
 				- Name of the player(s) to ban. Seperate player names with a comma.
+			token: required
+				- Token provided by the login command.
 	
 	getConsole:
-		-Gets the console output.
+		- Gets the console output.
 		key:
-			no keys.
+			token: required
+				- Token provided by the login command.
 	
 Exsamples:
-	example.com:1234?get=playerinventory&name=Hedgehog_,notch
-	example.com:1234?get=getconsole
-	example.com:1234?get=playerlist
-	example.com:1234?get=banPlayer&name=hedgehog_
+	example.com:1234?get=login&user=admin&pass=c7ad44cbad762a5da0a452f9e854fdc1e0e7a52a38015f23f3eab1d80b931dd472634dfac71cd34ebc35d16ab7fb8a90c81f975113d6c7538dc69dd8de9077ec
+	example.com:1234?get=playerinventory&name=Hedgehog_,notch&token=bfdd4cbaf29a4b67b0bd5516602e3c8b
+	example.com:1234?get=getconsole&token=bfdd4cbaf29a4b67b0bd5516602e3c8b
+	example.com:1234?get=playerlist&token=bfdd4cbaf29a4b67b0bd5516602e3c8b
+	example.com:1234?get=banPlayer&name=hedgehog_&token=bfdd4cbaf29a4b67b0bd5516602e3c8b
 
 Most of the http server code is copied from the webbukkit project: https://github.com/webbukkit/webbukkit
