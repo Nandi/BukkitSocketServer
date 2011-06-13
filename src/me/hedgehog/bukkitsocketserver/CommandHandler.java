@@ -17,11 +17,14 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 import me.hedgehog.bukkitsocketserver.tools.*;
+
 import net.minecraft.server.MinecraftServer;
 
 import org.bukkit.World;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 
 public class CommandHandler {
 	protected static final Logger log = Logger.getLogger("Minecraft");
@@ -169,7 +172,38 @@ public class CommandHandler {
 	
 	// Gets players inventory takes player name as argument
 	private String playerInventory(String[] args){
-		return errorString("Not yet implemented");
+		String output = "{";
+		int i = 0;
+		for (String s : args){
+			output += "\""+s+"\":";
+			Player p = plugin.getServer().getPlayer(s);
+			if(p != null){
+				PlayerInventory pInv = p.getInventory();
+				List<String[]> items = new LinkedList<String[]>();
+				for(ItemStack is : pInv.getContents()){
+					String[] temp = new String[3];
+					if(is != null){
+						temp[0] = String.valueOf(is.getType().getId());
+						temp[1] = is.getType().name();
+						temp[2] = String.valueOf(is.getAmount());
+					}
+					else{
+						temp[0] = "0";
+						temp[1] = "Empty";
+						temp[2] = "0";
+					}
+					items.add(temp);
+				}
+				i++;
+				output += Json.stringifyJson(items);
+			}
+			else{
+				output += "\"Player is not online\"";
+			}
+			
+			output += (i<args.length)?",":"";
+		}
+		return output + "}";
 	}
 	
 	// Gets the console output since last start
