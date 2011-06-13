@@ -19,7 +19,9 @@ import java.util.logging.Logger;
 import me.hedgehog.bukkitsocketserver.tools.*;
 import net.minecraft.server.MinecraftServer;
 
+import org.bukkit.World;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.Player;
 
 public class CommandHandler {
 	protected static final Logger log = Logger.getLogger("Minecraft");
@@ -136,7 +138,33 @@ public class CommandHandler {
 	
 	// Gets a list of all players, takes world name as arguments
 	private String playerList(String[] args){
-		return errorString("Not yet implemented");
+		String output = "{";
+		int i = 0;
+		if(args == null){
+			List<World> worlds = plugin.getServer().getWorlds();
+			for(World w : worlds){
+				List<String> pName = new LinkedList<String>();
+				for(Player p : w.getPlayers())
+					pName.add(p.getName());
+				output += "\""+w.getName()+"\":"+Json.stringifyJson(pName);
+				i++;
+				if(i < worlds.size())
+					output += ",";
+			}
+		}else{
+			for(String s : args){
+				World w = plugin.getServer().getWorld(s);
+				List<String> pName = new LinkedList<String>();
+				for(Player p : w.getPlayers())
+					pName.add(p.getName());
+				output += "\""+w.getName()+"\":"+Json.stringifyJson(pName);
+				i++;
+				if(i < args.length)
+					output += ",";
+			}
+		}
+		output += "}";
+		return output;
 	}
 	
 	// Gets players inventory takes player name as argument
