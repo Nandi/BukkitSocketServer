@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import me.hedgehog.bukkitsocketserver.tools.*;
 import net.minecraft.server.MinecraftServer;
@@ -19,6 +20,7 @@ import net.minecraft.server.MinecraftServer;
 import org.bukkit.craftbukkit.CraftServer;
 
 public class CommandHandler {
+	protected static final Logger log = Logger.getLogger("Minecraft");
 	
 	BukkitSocketServer plugin;
 	HttpContext context;
@@ -42,7 +44,6 @@ public class CommandHandler {
 			args.put(temp[0], temp[1].split(","));
 		}
 		String get = args.get("get")[0];
-		
 		if(get.equalsIgnoreCase("kickPlayer")){
 			kickPlayer(args.get("name"));
 		}
@@ -112,7 +113,14 @@ public class CommandHandler {
 	
 	// Gets the console output since last start
 	private String getConsole(){
-		String output = "{ \"lines\":"+Json.stringifyJson(readConsole())+"}";
+		List<String> temp = readConsole();
+		int start = 0;
+		for(int i=0; i<temp.size(); i++){
+			if(temp.get(i).indexOf("Starting minecraft server") != -1)
+				start = i;
+		}
+		List<String> sub = temp.subList(start, temp.size()-1);
+		String output = "{ \"lines\":"+Json.stringifyJson(sub)+"}";
 		return output;
 	}
 
