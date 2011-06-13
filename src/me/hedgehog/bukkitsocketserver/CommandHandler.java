@@ -50,7 +50,7 @@ public class CommandHandler {
 		InetAddress addr = request.remoteAddr;
 		String token = BukkitSocketServer.tokens.get(addr);
 		
-		if(get.equalsIgnoreCase("login")){
+		if(get.equalsIgnoreCase("token")){
 			if(args.containsKey("user") && args.containsKey("pass")){
 				if(args.get("user")[0].equals(plugin.user) && args.get("pass")[0].equals(plugin.pass)){
 						String t = generateToken();
