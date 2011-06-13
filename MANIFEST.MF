@@ -1,0 +1,2 @@
+Manifest-Version: 1.0
+class-path: ../lib/json_simple-1.1.jar
