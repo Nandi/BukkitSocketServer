@@ -7,11 +7,13 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
+import java.net.InetAddress;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.logging.Logger;
 
 import me.hedgehog.bukkitsocketserver.tools.*;
@@ -36,6 +38,7 @@ public class CommandHandler {
 		Map<String, String[]> args = new HashMap<String, String[]>();
 		byte[] bytes = null;
 		HttpResponse response = context.response;
+		HttpRequest request = context.request;
 		String q = context.request.query;
 		
 		String[] parts = q.split("&");
@@ -44,26 +47,56 @@ public class CommandHandler {
 			args.put(temp[0], temp[1].split(","));
 		}
 		String get = args.get("get")[0];
-		if(get.equalsIgnoreCase("kickPlayer")){
-			kickPlayer(args.get("name"));
+		InetAddress addr = request.remoteAddr;
+		String token = BukkitSocketServer.tokens.get(addr);
+		
+		if(get.equalsIgnoreCase("login")){
+			if(args.containsKey("user") && args.containsKey("pass")){
+				if(args.get("user")[0].equals(plugin.user) && args.get("pass")[0].equals(plugin.pass)){
+						String t = generateToken();
+						BukkitSocketServer.tokens.put(addr, t);
+						token = t;
+						t = "{\"token\":"+Json.stringifyJson(t)+"}";
+						bytes = t.getBytes("UTF-8");
+				}
+				else
+					bytes = errorString("Username and/or password is incorrect.").getBytes("UTF-8");
+			}
+			else{
+				bytes = errorString("Must provide a username and password").getBytes("UTF-8");
+			}
 		}
-		else if(get.equalsIgnoreCase("banPlayer")){
-			banPlayer(args.get("name"));
-		}
-		else if(get.equalsIgnoreCase("pluginList")){
-			bytes = pluginList().getBytes("UTF-8");
-		}
-		else if(get.equalsIgnoreCase("playerList")){
-			bytes = playerList(args.get("world")).getBytes("UTF-8");
-		}
-		else if(get.equalsIgnoreCase("playerInventory")){
-			bytes = playerInventory(args.get("name")).getBytes("UTF-8");
-		}
-		else if(get.equalsIgnoreCase("getConsole")){
-			bytes = getConsole().getBytes("UTF-8");
+		else if(token != null){
+			if (args.containsKey("token")){
+				if (token.equals(args.get("token")[0])){
+					if(get.equalsIgnoreCase("kickPlayer")){
+						kickPlayer(args.get("name"));
+					}
+					else if(get.equalsIgnoreCase("banPlayer")){
+						banPlayer(args.get("name"));
+					}
+					else if(get.equalsIgnoreCase("pluginList")){
+						bytes = pluginList().getBytes("UTF-8");
+					}
+					else if(get.equalsIgnoreCase("playerList")){
+						bytes = playerList(args.get("world")).getBytes("UTF-8");
+					}
+					else if(get.equalsIgnoreCase("playerInventory")){
+						bytes = playerInventory(args.get("name")).getBytes("UTF-8");
+					}
+					else if(get.equalsIgnoreCase("getConsole")){
+						bytes = getConsole().getBytes("UTF-8");
+					}
+					else{
+						bytes = errorString("Command not recognized.").getBytes("UTF-8");
+					}
+				}else
+					bytes = errorString("Tokens does not match. Token provided: "+args.get("token")[0] + " Correct token: " + token).getBytes("UTF-8");
+			}else
+				bytes = errorString("You need to provide a token.").getBytes("UTF-8");
 		}
 		else{
-			bytes = errorString("Command not recognized.").getBytes("UTF-8");
+			bytes = errorString("You need to get a login token first.").getBytes("UTF-8");
 		}
 		String dateStr = new Date().toString();
 		response.fields.put(HttpField.Date, dateStr);
@@ -128,6 +161,12 @@ public class CommandHandler {
 	private String errorString(String err){
 		String output = "{\"error\":"+Json.stringifyJson(err)+"}";
 		return output;
+	}
+	
+	// Generates tokens
+	private String generateToken(){
+		String uuid = UUID.randomUUID().toString();
+		return uuid.replace("-", "");
 	}
 	
 	// Read the server log
