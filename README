@@ -1,6 +1,9 @@
 HTTP server integrated with mincraft bukkit server.
 Uses json to communicate with a client.
 
+This plugin uses josn simple: http://code.google.com/p/json-simple/
+This .jar needs to be placed in <bukkit server>/lib, if you dont har a lib folder, create one.
+
 Usage:
 example.com:1234?get=<command>&<key>=<value>
 
