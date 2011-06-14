@@ -177,33 +177,53 @@ public class CommandHandler {
 		for (String s : args){
 			output += "\""+s+"\":";
 			Player p = plugin.getServer().getPlayer(s);
+			i++;
 			if(p != null){
 				PlayerInventory pInv = p.getInventory();
-				List<String[]> items = new LinkedList<String[]>();
-				for(ItemStack is : pInv.getContents()){
-					String[] temp = new String[3];
+				List<Map<String, String>> items = new LinkedList<Map<String, String>>();
+				
+				for(ItemStack is : pInv.getArmorContents()){
+					Map<String, String> temp = new HashMap<String, String>();
 					if(is != null){
-						temp[0] = String.valueOf(is.getType().getId());
-						temp[1] = is.getType().name();
-						temp[2] = String.valueOf(is.getAmount());
+						temp.put("id", String.valueOf(is.getType().getId()));
+						temp.put("name", is.getType().name());
+						temp.put("durability", String.valueOf(is.getDurability()));
 					}
 					else{
-						temp[0] = "0";
-						temp[1] = "Empty";
-						temp[2] = "0";
+						temp.put("id", "0");
+						temp.put("name", "EMPTY");
+						temp.put("durability", "0");
 					}
 					items.add(temp);
 				}
-				i++;
-				output += Json.stringifyJson(items);
+				output += "{\"armor\":"+Json.stringifyJson(items)+",";
+				
+				items = new LinkedList<Map<String, String>>();
+				for(ItemStack is : pInv.getContents()){
+					Map<String, String> temp = new HashMap<String, String>();
+					if(is != null){
+						temp.put("id", String.valueOf(is.getType().getId()));
+						temp.put("name", is.getType().name());
+						temp.put("amount", String.valueOf(is.getAmount()));
+					}
+					else{
+						temp.put("id", "0");
+						temp.put("name", "EMPTY");
+						temp.put("amount", "0");
+					}
+					items.add(temp);
+				}
+				output += "\"inventory\":"+Json.stringifyJson(items)+"}";
 			}
 			else{
+				
 				output += "\"Player is not online\"";
 			}
 			
 			output += (i<args.length)?",":"";
 		}
-		return output + "}";
+		output += "}";
+		return output;
 	}
 	
 	// Gets the console output since last start
@@ -214,7 +234,7 @@ public class CommandHandler {
 			if(temp.get(i).indexOf("Starting minecraft server") != -1)
 				start = i;
 		}
-		List<String> sub = temp.subList(start, temp.size()-1);
+		List<String> sub = temp.subList(start, temp.size());
 		String output = "{ \"lines\":"+Json.stringifyJson(sub)+"}";
 		return output;
 	}
